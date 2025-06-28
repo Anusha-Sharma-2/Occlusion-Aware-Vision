@@ -16,7 +16,7 @@ def generate_camera_positions(radius=0.2, height=1.0, steps=16):
     positions = []
 
     for theta in angles:
-        x = radius * np.cos(theta) + 0.5
+        x = radius * np.cos(theta) + 0.5  # center around (0.5, 0)
         y = radius * np.sin(theta)
         z = height
         positions.append([x, y, z])

@@ -1,15 +1,14 @@
 import pybullet as p
 import numpy as np
 
-def set_camera_view(position):
-    target = [0.5, 0, 0.8]
-    up = [0, 0, 1]
-    view_matrix = p.computeViewMatrix(position, target, up)
+def capture_robot_camera(robot_id):
+    pos, orn = p.getBasePositionAndOrientation(robot_id)
+    pos = list(pos)
+    target = [pos[0] + 0.5, pos[1], pos[2] + 0.2]  # look ahead
+
+    view_matrix = p.computeViewMatrix(pos, target, [0, 0, 1])
     proj_matrix = p.computeProjectionMatrixFOV(60, 1.0, 0.1, 3.1)
-    p.getCameraImage(320, 240, view_matrix, proj_matrix)
 
-def capture_image():
-    width, height, rgb, _, _ = p.getCameraImage(320, 240)
-    rgb_array = np.reshape(rgb, (height, width, 4)).astype(np.uint8)[:, :, :3]
-    return rgb_array
-
+    _, _, rgb, _, _ = p.getCameraImage(320, 240, view_matrix, proj_matrix)
+    rgb_image = np.reshape(rgb, (240, 320, 4))[:, :, :3].astype(np.uint8)
+    return rgb_image

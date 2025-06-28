@@ -1,47 +1,34 @@
 from src.simulation import setup_scene
-from src.camera import set_camera_view, capture_image
+from src.camera import capture_robot_camera
 from src.perception import detect_object
-from src.planner import generate_camera_positions
+from src.controls import move_forward, stop
 from config import CONFIDENCE_THRESHOLD
 
-import matplotlib.pyplot as plt
-import os
 import cv2
+import os
 
 def main():
-    setup_scene()
+    robot_id = setup_scene()
     os.makedirs("output", exist_ok=True)
 
-    # Get smarter viewpoints (orbit camera)
-    camera_positions = generate_camera_positions(radius=1.0, height=1.0, steps=8)
+    confidence_log = []
 
-    confidences = []
-
-    for i, pos in enumerate(camera_positions):
-        set_camera_view(pos)
-        rgb_img = capture_image()
+    for i in range(30):  # loop through motion + capture steps
+        rgb_img = capture_robot_camera(robot_id)
         confidence = detect_object(rgb_img)
-        confidences.append(confidence)
-        print(f"[View {i} @ {pos}] Confidence: {confidence:.2f}")
+        confidence_log.append(confidence)
 
-        # Save image
+        print(f"[Step {i}] Confidence: {confidence:.2f}")
         img_path = f"output/view_{i}_conf_{confidence:.2f}.png"
         cv2.imwrite(img_path, cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR))
 
         if confidence >= CONFIDENCE_THRESHOLD:
-            print("Object recognized with high confidence.")
+            print("✅ Object found with high confidence!")
             break
-    else:
-        print("Could not confidently identify object after all views.")
 
-    # Plot confidence trend
-    plt.plot(range(len(confidences)), confidences, marker='o')
-    plt.xlabel("View Index")
-    plt.ylabel("Confidence")
-    plt.title("Confidence vs Viewpoint")
-    plt.grid(True)
-    plt.savefig("output/confidence_plot.png")
-    plt.show()
+        move_forward(robot_id, duration=0.5)
+
+    stop(robot_id)
 
 if __name__ == "__main__":
     main()
